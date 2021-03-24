@@ -2,6 +2,7 @@ package cn.cq.yygh.hosp.controller;
 
 import cn.cq.yygh.common.exception.YyghException;
 import cn.cq.yygh.common.result.Result;
+import cn.cq.yygh.common.utils.MD5;
 import cn.cq.yygh.hosp.service.HospitalSetService;
 import cn.cq.yygh.model.hosp.HospitalSet;
 import cn.cq.yygh.vo.hosp.HospitalSetQueryVo;
@@ -98,7 +99,7 @@ public class HospitalSetController {
         hospitalSet.setStatus(1);
         //签名秘钥
         SecureRandom random = new SecureRandom();
-        hospitalSet.setSignKey(DigestUtils.md5DigestAsHex((System.currentTimeMillis()+""+random.nextInt(1000)).getBytes()));
+        hospitalSet.setSignKey(MD5.encrypt((System.currentTimeMillis()+""+random.nextInt(1000))));
         //调用方法
         boolean save = hospitalSetService.save(hospitalSet);
         if (save){
