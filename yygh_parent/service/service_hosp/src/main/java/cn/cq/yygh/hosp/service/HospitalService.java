@@ -1,6 +1,8 @@
 package cn.cq.yygh.hosp.service;
 
 import cn.cq.yygh.model.hosp.Hospital;
+import cn.cq.yygh.vo.hosp.HospitalQueryVo;
+import org.springframework.data.domain.Page;
 
 import java.util.Map;
 
@@ -20,4 +22,6 @@ public interface HospitalService {
 
     //根据医院编号查询
     Hospital getByHoscode(String hoscode);
+
+    Page<Hospital> selectHospPage(Integer page, Integer limit, HospitalQueryVo hospitalQueryVo);
 }

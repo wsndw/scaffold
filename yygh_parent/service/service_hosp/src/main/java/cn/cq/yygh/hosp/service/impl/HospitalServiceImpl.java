@@ -1,15 +1,17 @@
 package cn.cq.yygh.hosp.service.impl;
 
+import cn.cq.yygh.cmn.client.DictFeignClient;
 import cn.cq.yygh.hosp.mapper.HospitalSetMapper;
 import cn.cq.yygh.hosp.repository.HospitalRepository;
 import cn.cq.yygh.hosp.service.HospitalService;
 import cn.cq.yygh.model.hosp.Hospital;
 import cn.cq.yygh.model.hosp.HospitalSet;
+import cn.cq.yygh.vo.hosp.HospitalQueryVo;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.convert.QueryMapper;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -29,6 +31,9 @@ public class HospitalServiceImpl implements HospitalService {
 
     @Autowired
     private HospitalSetMapper hospitalSetMapper;
+
+    @Autowired
+    private DictFeignClient dictFeignClient;
 
     //上传医院
     @Override
@@ -71,6 +76,44 @@ public class HospitalServiceImpl implements HospitalService {
     @Override
     public Hospital getByHoscode(String hoscode) {
         Hospital hospital = hospitalRepository.getHospitalByHoscode(hoscode);
+
+        return hospital;
+    }
+
+    @Override
+    public Page<Hospital> selectHospPage(Integer page, Integer limit, HospitalQueryVo hospitalQueryVo) {
+        //创建pageable
+        Pageable pageable = PageRequest.of(page - 1, limit);
+
+        //创建调教匹配器
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
+                .withIgnoreCase(true);
+        //hospitalQueryVo转hospital
+        Hospital hospital = new Hospital();
+        BeanUtils.copyProperties(hospitalQueryVo, hospital);
+        //创建对象
+        Example<Hospital> example = Example.of(hospital, matcher);
+        Page<Hospital> pages = hospitalRepository.findAll(example, pageable);
+
+        //获取查询list集合，遍历进行医院等级封装
+        pages.getContent().stream().forEach(item -> {
+            this.setHospitalHosType(item);
+        });
+
+        return pages;
+    }
+
+    private Hospital setHospitalHosType(Hospital hospital) {
+        //根据dictcode和value获取医院等级名称
+        String hostTypeString = dictFeignClient.getName("Hostype", hospital.getHostype());
+        //查询省市区
+        String provinceString = dictFeignClient.getName(hospital.getProvinceCode());
+        String cityString = dictFeignClient.getName(hospital.getCityCode());
+        String districtString = dictFeignClient.getName(hospital.getDistrictCode());
+
+        hospital.getParam().put("fullAddress", provinceString + cityString + districtString);
+        hospital.getParam().put("hostTypeString", hostTypeString);
 
         return hospital;
     }

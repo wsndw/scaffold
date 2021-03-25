@@ -28,10 +28,19 @@ public class DictController {
     @Autowired
     private DictService dictService;
 
+    //根据dictcode查询下级节点
+    @ApiOperation("根据dictcode获取下级节点")
+    @GetMapping("findByDictCode/{dictCode}")
+    public Result findByDictCode(@PathVariable String dictCode){
+        List<Dict> dictList=dictService.findByDictCode(dictCode);
+        return Result.ok(dictList);
+    }
+
+
     //导入数据字典
     @ApiOperation("导入")
     @PostMapping("importData")
-    public Result importData(MultipartFile file){
+    public Result importData(MultipartFile file) {
         dictService.importData(file);
         return Result.ok();
     }
@@ -39,7 +48,7 @@ public class DictController {
     //导出数据字典excel
     @ApiOperation("导出")
     @GetMapping("/exportData")
-    public void exportData(HttpServletResponse response){
+    public void exportData(HttpServletResponse response) {
         dictService.exportData(response);
     }
 
@@ -49,5 +58,21 @@ public class DictController {
     public Result findChildData(@PathVariable Long id) {
         List<Dict> list = dictService.findChildData(id);
         return Result.ok(list);
+    }
+
+
+    //根据dictcode和value值查询
+    @GetMapping("getName/{dictcode}/{value}")
+    public String getName(@PathVariable String dictcode,
+                          @PathVariable String value) {
+        String dictName = dictService.getDictName(dictcode, value);
+        return dictName;
+    }
+
+    //根据value查询
+    @GetMapping("getName/{value}")
+    public String getName(@PathVariable String value) {
+        String dictName = dictService.getDictName("", value);
+        return dictName;
     }
 }

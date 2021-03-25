@@ -12,6 +12,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +43,7 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
             e.printStackTrace();
         }
     }
+
 
     //导出数据字典excel
     @Override
@@ -93,4 +95,45 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
         Integer count = baseMapper.selectCount(queryWrapper);
         return count > 0;
     }
+
+    @Override
+    public String getDictName(String dictcode, String value) {
+        //如果dictcode为空，直接根据value查询
+        if (StringUtils.isEmpty(dictcode)){
+            //直接根据value查询
+            QueryWrapper<Dict> wrapper =new QueryWrapper<>();
+            wrapper.eq("value",value);
+            Dict dict = baseMapper.selectOne(wrapper);
+            return dict.getName();
+        }else {//不为空，根据dictcode和value查询
+            QueryWrapper<Dict> wrapper =new QueryWrapper<>();
+            wrapper.eq("dict_code",dictcode);
+            Dict codeDict = getDictByDictCode(dictcode);
+            Long parent_id = codeDict.getId();
+            Dict dict = baseMapper.selectOne(new QueryWrapper<Dict>()
+                    .eq("parent_id", parent_id)
+                    .eq("value", value));
+            return dict.getName();
+        }
+    }
+
+    @Override
+    public List<Dict> findByDictCode(String dictCode) {
+        Dict codeDict = this.getDictByDictCode(dictCode);
+        if(null == codeDict){
+            return null;
+        }
+        return this.findChildData(codeDict.getId());
+    }
+
+
+    private Dict getDictByDictCode(String dictCode){
+        QueryWrapper<Dict> wrapper =new QueryWrapper<>();
+        wrapper.eq("dict_code",dictCode);
+        Dict codeDict = baseMapper.selectOne(wrapper);
+        return codeDict;
+    }
+
+
+
 }
